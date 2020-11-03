@@ -9,6 +9,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func prepareToken(user *interfaces.User) string {
+	tokenContent := jwt.MapClaims{
+		"user_id": user.ID,
+		"expiry": time.Now().Add(time.Minute * 60).Unix(),
+	}
+	jwtToken := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tokenContent)
+	token, err := jwtToken.SignedString([]byte("TokenPassword"))
+	helpers.HandleErr(err)
+
+	return token
+}
+
 func Login(username string, pass string) map[string]interface{} {
 	db := helpers.ConnectDB()
 	user := &interfaces.User{}
@@ -23,13 +35,6 @@ func Login(username string, pass string) map[string]interface{} {
 		Email: user.Email,
 		Accounts: accounts,
 	}
-	tokenContent := jwt.MapClaims{
-		"user_id": user.ID,
-		"expiry": time.Now().Add(time.Minute * 60).Unix(),
-	}
-	jwtToken := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tokenContent)
-	token, err := jwtToken.SignedString([]byte("TokenPassword"))
-	helpers.HandleErr(err)
 
 	var response = map[string]interface{}{
 		"message": "all is fine",
