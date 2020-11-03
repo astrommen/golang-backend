@@ -19,7 +19,7 @@ func HashAndSalt(pass []byte) string {
 	return string(hashed)
 }
 
-func connectDB() *gorm.DB {
+func ConnectDB() *gorm.DB {
 	db, err := gorm.Open(
 		"postgres", 
 		"host=127.0.0.1 port=5432 user=postgres dbname=bankapp	password=postgres sslmode=disable")
