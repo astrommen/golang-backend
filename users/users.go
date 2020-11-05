@@ -41,34 +41,67 @@ func prepareResponse(user *interfaces.User, accounts []interfaces.ResponseAccoun
 }
 
 func Login(username string, pass string) map[string]interface{} {
-	// Connect DB
-	db := helpers.ConnectDB()
-	user := &interfaces.User{}
-	if db.Where("username = ? ", username).First(&user).RecordNotFound() {
-		return map[string]interface{}{
-			"message": "all is fine",
-		}
-	}
-
-	// Verify Password
-	passErr := bcrypt.CompareHashAndPassword(
-		[]byte(user.Password),
-		[]byte(pass),
+	// Add validation to login
+	valid := helpers.Validation(
+		[]interfaces.Validation{
+			{Value: username, Valid: "username"},
+			{Value: pass, Valid: "password"},
+		},
 	)
-	if passErr == bcrypt.ErrMismatchedHashAndPassword && passErr != nil {
+
+	if valid {
+		// Connect DB
+		db := helpers.ConnectDB()
+		user := &interfaces.User{}
+		if db.Where("username = ? ", username).First(&user).RecordNotFound() {
+			return map[string]interface{}{
+				"message": "all is fine",
+			}
+		}
+
+		// Verify Password
+		passErr := bcrypt.CompareHashAndPassword(
+			[]byte(user.Password),
+			[]byte(pass),
+		)
+		if passErr == bcrypt.ErrMismatchedHashAndPassword && passErr != nil {
+			return map[string]interface{}{
+				"message": "Wrong password",
+			}
+		}
+
+		// Find accounts for user
+		accounts := []interfaces.ResponseAccount{}
+		db.Table("accounts").Select("id, name, balance").Where("user_id = ? ", user.ID).Scan(&accounts)
+
+		defer db.Close()
+
+		var response = prepareResponse(user, accounts)
+
+		return response
+	} else {
 		return map[string]interface{}{
-			"message": "Wrong password",
+			"message": "not valid values",
 		}
 	}
 
-	// Find accounts for user
-	accounts := []interfaces.ResponseAccount{}
-	db.Table("accounts").Select("id, name, balance").Where("user_id = ? ", user.ID).Scan(&accounts)
+}
 
-	defer db.Close()
+func Register(username string, email string, pass string) map[string]interface{} {
+	// Add validation to registration
+	valid := helpers.Validation(
+		[]interfaces.Validation{
+			{Value: username, Valid: "username"},
+			{Value: email, Valid: "email"},
+			{Value: pass, Valid: "password"},
+		},
+	)
 
-	var response = prepareResponse(user, accounts)
+	if valid {
 
-	return response
-
+	} else {
+		return map[string]interface{}{
+			"message": "not valid values",
+		}
+	}
 }
