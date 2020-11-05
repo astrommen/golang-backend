@@ -5,6 +5,7 @@ import (
 
 	"golang-backend/helpers"
 	"golang-backend/interfaces"
+
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -12,7 +13,7 @@ import (
 func prepareToken(user *interfaces.User) string {
 	tokenContent := jwt.MapClaims{
 		"user_id": user.ID,
-		"expiry": time.Now().Add(time.Minute * 60).Unix(),
+		"expiry":  time.Now().Add(time.Minute * 60).Unix(),
 	}
 	jwtToken := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tokenContent)
 	token, err := jwtToken.SignedString([]byte("TokenPassword"))
@@ -23,15 +24,15 @@ func prepareToken(user *interfaces.User) string {
 
 func prepareResponse(user *interfaces.User, accounts []interfaces.ResponseAccount) map[string]interface{} {
 	responseUser := &interfaces.ResponseUser{
-		ID: user.ID,
+		ID:       user.ID,
 		Username: user.Username,
-		Email: user.Email,
+		Email:    user.Email,
 		Accounts: accounts,
 	}
 
-	var token = prepareToken(user);
+	var token = prepareToken(user)
 	var response = map[string]interface{}{
-		"message": "all is fine"
+		"message": "all is fine",
 	}
 	response["jwt"] = token
 	response["data"] = responseUser
@@ -40,36 +41,34 @@ func prepareResponse(user *interfaces.User, accounts []interfaces.ResponseAccoun
 }
 
 func Login(username string, pass string) map[string]interface{} {
+	// Connect DB
 	db := helpers.ConnectDB()
 	user := &interfaces.User{}
-	passErr := bcrypt.CompareHashAndPassword(
-		[]byte(user.Password), 
-		[]byte(pass),
-	)
-	accounts := []interfaces.ResponseAccount{}
-	responseUser := &interfaces.ResponseUser{
-		ID: user.ID,
-		Username: user.Username,
-		Email: user.Email,
-		Accounts: accounts,
-	}
-
-	
-
-	if db.Where("username = ?", username).First(&user).RecordNotFound() {
-		return map[string]interface{} {
-			"message": "User not found",
+	if db.Where("username = ? ", username).First(&user).RecordNotFound() {
+		return map[string]interface{}{
+			"message": "all is fine",
 		}
 	}
 
+	// Verify Password
+	passErr := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte(pass),
+	)
 	if passErr == bcrypt.ErrMismatchedHashAndPassword && passErr != nil {
-		return map[string]interface{} {
+		return map[string]interface{}{
 			"message": "Wrong password",
 		}
 	}
 
+	// Find accounts for user
+	accounts := []interfaces.ResponseAccount{}
 	db.Table("accounts").Select("id, name, balance").Where("user_id = ? ", user.ID).Scan(&accounts)
 
 	defer db.Close()
+
+	var response = prepareResponse(user, accounts)
+
+	return response
 
 }
