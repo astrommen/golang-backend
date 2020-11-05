@@ -21,6 +21,24 @@ func prepareToken(user *interfaces.User) string {
 	return token
 }
 
+func prepareResponse(user *interfaces.User, accounts []interfaces.ResponseAccount) map[string]interface{} {
+	responseUser := &interfaces.ResponseUser{
+		ID: user.ID,
+		Username: user.Username,
+		Email: user.Email,
+		Accounts: accounts,
+	}
+
+	var token = prepareToken(user);
+	var response = map[string]interface{}{
+		"message": "all is fine"
+	}
+	response["jwt"] = token
+	response["data"] = responseUser
+
+	return response
+}
+
 func Login(username string, pass string) map[string]interface{} {
 	db := helpers.ConnectDB()
 	user := &interfaces.User{}
@@ -36,12 +54,7 @@ func Login(username string, pass string) map[string]interface{} {
 		Accounts: accounts,
 	}
 
-	var response = map[string]interface{}{
-		"message": "all is fine",
-	}
-
-	response["jwt"] = token
-	response["data"] = responseUser
+	
 
 	if db.Where("username = ?", username).First(&user).RecordNotFound() {
 		return map[string]interface{} {
@@ -58,6 +71,5 @@ func Login(username string, pass string) map[string]interface{} {
 	db.Table("accounts").Select("id, name, balance").Where("user_id = ? ", user.ID).Scan(&accounts)
 
 	defer db.Close()
-	
-	return response
+
 }
