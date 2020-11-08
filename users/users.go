@@ -98,7 +98,31 @@ func Register(username string, email string, pass string) map[string]interface{}
 	)
 
 	if valid {
+		// connect to DB
+		db := helpers.ConnectDB()
+		generatedPassword := helpers.HashAndSalt([]byte(pass))
+		user := &interfaces.User{
+			Username: username,
+			Email: email,
+			Password: generatedPassword,
+		}
+		db.Create(&user)
 
+		account := &interfaces.Account{
+			Type: "Daily Account",
+			Name: string(username + "'s" + " account"),
+			Balance: 0,
+			UserID: user.ID,
+		}
+		db.Create(&account)
+
+		defer db.Close()
+		accounts := []interfaces.ResponseAccount{}
+		respAccount := []interfaces.ResponseAccount{
+			ID: account.ID,
+			Name: account.Name,
+			Balance: int(account.Balance)
+		}
 	} else {
 		return map[string]interface{}{
 			"message": "not valid values",
