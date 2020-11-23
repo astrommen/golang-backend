@@ -24,10 +24,6 @@ type Register struct {
 	Password string
 }
 
-type ErrResponse struct {
-	Message string
-}
-
 func readBody(r *http.Request) []byte {
 	body, err := ioutil.ReadAll(r.Body)
 	helpers.HandleErr(err)
@@ -77,6 +73,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 func StartApi() {
 	router := mux.NewRouter()
+	// Panic handler middleware
+	router.Use(helpers.PanicHandler)
 	router.HandleFunc("/login", login).Methods("POST")
 	router.HandleFunc("/register", register).Methods("POST")
 	fmt.Println("App is working on port :8888")
