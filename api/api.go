@@ -28,13 +28,27 @@ type ErrResponse struct {
 	Message string
 }
 
+func readBody(r *http.Request) []byte {
+	body, err := ioutil.ReadAll(r.Body)
+	helpers.HandleErr(err)
+
+	return body
+}
+
+func apiResponse(call map[string]interface{}, w http.ResponseWriter) {
+	if call["message"] == "all is fine" {
+		resp := call
+		json.NewEncoder(w).Encode(resp)
+	}
+}
+
 func register(w http.ResponseWriter, r *http.Request) {
 	// Read body
 	body := readBody(r)
 
 	// Handle registration
 	var formattedBody Register
-	err = json.Unmarshal(body, &formattedBody)
+	err := json.Unmarshal(body, &formattedBody)
 	helpers.HandleErr(err)
 
 	register := users.Register(formattedBody.Username, formattedBody.Email, formattedBody.Password)
@@ -50,7 +64,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	body := readBody(r)
 
 	var formattedBody Login
-	err = json.Unmarshal(body, &formattedBody)
+	err := json.Unmarshal(body, &formattedBody)
 	helpers.HandleErr(err)
 	
 	login := users.Login(formattedBody.Username, formattedBody.Password)
@@ -66,16 +80,3 @@ func StartApi() {
 	log.Fatal(http.ListenAndServe(":8888", router))
 }
 
-func readBody(r *http.Request) []byte {
-	body, err := ioutil.ReadAll(r.Body)
-	helpers.HandleErr(err)
-
-	return body
-}
-
-func apiResponse(call map[string]interface{}, w http.ResponseWriter) {
-	if call["message"] == "all is fine" {
-		resp := call
-		json.NewEncoder(w).Encode(resp)
-	}
-}

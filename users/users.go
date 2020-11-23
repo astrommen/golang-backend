@@ -118,13 +118,14 @@ func Register(username string, email string, pass string) map[string]interface{}
 
 		defer db.Close()
 		accounts := []interfaces.ResponseAccount{}
-		respAccount := []interfaces.ResponseAccount{
+		respAccount := interfaces.ResponseAccount{
 			ID: account.ID,
 			Name: account.Name,
-			Balance: int(account.Balance),
+			Balance: account.Balance,
 		}
-
+		accounts = append(accounts, respAccount)
 		var response = prepareResponse(user, accounts)
+
 		return response
 	} else {
 		return map[string]interface{}{
