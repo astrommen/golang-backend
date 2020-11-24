@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"golang-backend/helpers"
+	"golang-backend/interfaces"
 	"golang-backend/users"
 
 	"github.com/gorilla/mux"
@@ -71,12 +72,22 @@ func login(w http.ResponseWriter, r *http.Request) {
 	apiResponse(login, w)
 }
 
+func getUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userId := vars["id"]
+	auth := r.Header.Get("Authorization")
+
+	user := users.GerUser(userId, auth)
+	apiResponse(user, w)
+}
+
 func StartApi() {
 	router := mux.NewRouter()
 	// Panic handler middleware
 	router.Use(helpers.PanicHandler)
 	router.HandleFunc("/login", login).Methods("POST")
 	router.HandleFunc("/register", register).Methods("POST")
+	router.HandleFunc("/user/{id}", getUser).Methods("GET")
 	fmt.Println("App is working on port :8888")
 	log.Fatal(http.ListenAndServe(":8888", router))
 }
