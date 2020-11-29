@@ -1,9 +1,15 @@
 package helpers
 
 import (
-	"golang-backend/interfaces"
+	"encoding/json"
+	"log"
+	"net/http"
 	"regexp"
-
+	"strconv"
+	"strings"
+	
+	"golang-backend/interfaces"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"

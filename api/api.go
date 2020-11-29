@@ -77,7 +77,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	userId := vars["id"]
 	auth := r.Header.Get("Authorization")
 
-	user := users.GerUser(userId, auth)
+	user := users.GetUser(userId, auth)
 	apiResponse(user, w)
 }
 
