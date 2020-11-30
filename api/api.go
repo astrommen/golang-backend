@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	// "io"
 	"log"
 	"net/http"
 
@@ -26,10 +27,15 @@ type Register struct {
 }
 
 func readBody(r *http.Request) []byte {
+	
 	body, err := ioutil.ReadAll(r.Body)
 	helpers.HandleErr(err)
 
 	return body
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func apiResponse(call map[string]interface{}, w http.ResponseWriter) {
@@ -43,8 +49,16 @@ func apiResponse(call map[string]interface{}, w http.ResponseWriter) {
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
+	//Allow CORSE here by * or specific origin
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+
+	// w.Header().Set("Content-Type", "application/javascript")
+
 	// Read body
 	body := readBody(r)
+	fmt.Println(body)
 
 	// Handle registration
 	var formattedBody Register
@@ -52,6 +66,8 @@ func register(w http.ResponseWriter, r *http.Request) {
 	helpers.HandleErr(err)
 
 	register := users.Register(formattedBody.Username, formattedBody.Email, formattedBody.Password)
+	
+
 	// Refactor register to use apiRespons
 	apiResponse(register, w)
 
@@ -60,6 +76,13 @@ func register(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
+	//Allow CORSE here by * or specific origin
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	w.Header().Set("Content-Type", "application/javascript")
+
 	// Refactor login to use readBody
 	body := readBody(r)
 
@@ -68,6 +91,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	helpers.HandleErr(err)
 	
 	login := users.Login(formattedBody.Username, formattedBody.Password)
+
 	// Refactor login to use apiResponse
 	apiResponse(login, w)
 }
@@ -78,16 +102,32 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	auth := r.Header.Get("Authorization")
 
 	user := users.GetUser(userId, auth)
+
 	apiResponse(user, w)
 }
+
+// func handler(w http.ResponseWriter, r *http.Request) {
+// 	resp, err := http.Get("http://jsonplaceholder.typicode.com/posts") // your request to the api
+
+// 	w.Header().Set("Content-Type", "application/javascript")
+
+// 	if err == nil && resp.StatusCode == http.StatusOK {
+// 			io.Copy(w, resp.Body)
+// 	} else {
+// 			json.NewEncoder(w).Encode(err)
+// 	}
+// }
+
+
 
 func StartApi() {
 	router := mux.NewRouter()
 	// Panic handler middleware
 	router.Use(helpers.PanicHandler)
-	router.HandleFunc("/login", login).Methods("POST")
-	router.HandleFunc("/register", register).Methods("POST")
+	router.HandleFunc("/login", login).Methods("POST", "OPTIONS")
+	router.HandleFunc("/register", register).Methods("POST", "OPTIONS")
 	router.HandleFunc("/user/{id}", getUser).Methods("GET")
+	// router.HandleFunc("/handler", handler).Methods("GET")
 	fmt.Println("App is working on port :8888")
 	log.Fatal(http.ListenAndServe(":8888", router))
 }
